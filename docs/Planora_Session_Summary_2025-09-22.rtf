@@ -1,0 +1,97 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Calibri;}{\f1 Consolas;}}
+\paperw11907\paperh16840\margl1440\margr1440\margt1440\margb1440
+
+\pard\qc\b\f0\fs28 Planora \endash Session Summary & Implementation Log\par
+\pard\qc\fs20 September 22, 2025\par
+\pard\sb200\sa200\fs24
+
+\b 1. Conversation Overview\b0\par
+\pard\sb120\sa120
+\b Primary Objectives:\b0\par
+\pard\li720\sa80
+\'95 \ldblquote make the main or starting file \ldots buttons should redirect to login/registration\rdblquote\par
+\'95 \ldblquote remove the events \ldots on the upper side and make the ui better\rdblquote\par
+\'95 \ldblquote make each and every page \ldots same and exact ui (night and light mode) \ldots Don\'92t do [global], do per file\rdblquote\par
+\'95 \ldblquote polish chat ui \ldots make buttons vibe\rdblquote\par
+\'95 Poster: \ldblquote Delete key \ldots fix shapes; fix image restore from saved drafts; fix zoom/centering; make left buttons professional\rdblquote\par
+\'95 Tasks: \ldblquote dropdown is clipping; fix; layer coming outside; fix\rdblquote\par
+\'95 \ldblquote Register dropdown should match UI\rdblquote\par
+\'95 \ldblquote I can\'92t click tools sometimes; drawing leaves marks when dragging; fix\rdblquote\par
+\'95 \ldblquote Buttons look small; make standard size; same size as below\rdblquote\par
+\'95 \ldblquote If I send to a friend, how do they run it?\rdblquote\par
+\pard\sa120
+\b Session Context:\b0 Implemented themed components and unified styling app-wide; refined Navbar/auth; polished Chat; extensive Poster fixes (deletion, persistence via data URLs, rebuilt component, zoom/centering, tools UX); Tasks dropdown repaired; provided run instructions.\par
+\b User Intent Evolution:\b0 Navigation/UI unification \endash\> per-page consistency \endash\> Poster robustness/UX \endash\> dropdown fixes \endash\> tool ergonomics/button sizing \endash\> setup docs for sharing.\par
+
+\b 2. Technical Foundation\b0\par
+\pard\li720\sa80
+\'95 Frontend: React 18, Vite 5, Tailwind CSS, lucide-react icons\par
+\'95 Routing: react-router-dom v6\par
+\'95 Canvas: React Konva (Stage/Layer/Line/Text/Image/Transformer/Circle/RegularPolygon)\par
+\'95 Theming: Tailwind component classes (.btn, .btn-primary, .btn-secondary, .btn-outline, .card, .section, .input, .label, .select)\par
+\'95 Backend: Django REST Framework, Channels; JWT auth; SQLite for local default\par
+\'95 Poster persistence: posterApi with JWT handling; images/background as data URLs\par
+\pard\sa120
+
+\b 3. Codebase Status\b0\par
+\pard\li720\sa80
+\'95 \f1 frontend\\src\\index.css\f0: central Tailwind tokens; includes .select for native selects\par
+\'95 \f1 frontend\\src\\components\\Navbar.jsx\f0: themed header with theme toggle, compact mode; outer wrapper\'92s pointer-events disabled to avoid blocking editor clicks\par
+\'95 Auth pages (Login.jsx, Register.jsx): compact Navbar; forms styled; Register role select uses .select\par
+\'95 \f1 frontend\\src\\pages\\Tasks.jsx\f0: Assignee combobox as robust drop-up; z-index and overflow fixes; blur/Esc dismiss; themed ring/shadow\par
+\'95 \f1 frontend\\src\\pages\\Poster.jsx\f0: rebuilt; zoom ties Stage size to \f1 zoom\f0 and centers board; draw guards; lines draggable in Select; segmented Tools pill rebuilt (consistent sizing/visibility); images/background persisted as data URLs; history snapshots; export via posterApi\par
+\'95 API clients: \f1 frontend\\src\\services\\api.js\f0 and \f1 frontend\\src\\services\\posterApi.js\f0 with JWT and refresh handling\par
+\pard\sa120
+
+\b 4. Problem Resolution\b0\par
+\pard\li720\sa80
+\'95 Issues: Poster JSX corruption; Delete not removing shapes; images not restoring; zoom not centered; Navbar overlay blocking clicks; drawing while dragging; Tools pill sizing/overflow; Tasks dropdown clipping; Register select mismatch\par
+\'95 Fixes: Rebuilt Poster.jsx; Delete fix; data URL persistence; Stage sizing + centered container; pointer-events fix on Navbar; draw start guards; draggable lines; redesigned Tools pill; drop-up combobox; .select styling on Register\par
+\pard\sa120
+
+\b 5. Progress Tracking\b0\par
+\pard\li720\sa80
+\'95 Completed: UI unification; Chat polish; Navbar compact & pointer-events; Tasks dropdown fixes; Register select styling; Poster improvements (delete, persistence, zoom/centering, draw ergonomics, draggable lines, Tools pill, standardized buttons, header padding); run instructions\par
+\'95 Optional next: auto drop direction; cursor-anchored zoom & Space-to-pan; replace hard-coded top padding; add icons to Tools/Shapes\par
+\pard\sa120
+
+\b 6. Active Work State\b0\par
+Most recent deliverable: Step-by-step instructions for running the project locally (backend and frontend).\par
+
+\b 7. Recent Operations\b0\par
+\pard\li720\sa80
+\'95 Edited \f1 Poster.jsx\f0 to add top padding for sticky Navbar clearance; rebuilt Tools pill; made lines draggable with x/y; ensured draw logic doesn\'92t start on draggable nodes\par
+\'95 Edited \f1 Navbar.jsx\f0 to avoid pointer-event interception\par
+\'95 Edited \f1 Tasks.jsx\f0 to convert assignee dropdown to a drop-up with dismiss behavior and improved styling\par
+\'95 Edited \f1 Register.jsx\f0 to style select with .select\par
+\pard\sa120
+
+\b 8. Continuation Plan\b0\par
+\pard\li720\sa80
+\'95 Auto choose drop direction for the Tasks combobox based on viewport space\par
+\'95 Cursor-anchored wheel zoom and Space-to-pan for the Poster editor\par
+\'95 Replace hard-coded \ldblquote pt-28\rdblquote with a layout-driven offset (measure Navbar height or reserve header space with CSS)\par
+\'95 Add icons to Tools/Shapes buttons for greater clarity\par
+\pard\sa200
+
+\b Appendix: How to Run on Another PC (Windows)\b0\par
+\pard\li720\sa80
+1) Install prerequisites: Node.js 18+, Python 3.11+, Git\par
+2) Backend (Django):\par
+\pard\li1080\sa60
+\'95 Create and activate a virtualenv\par
+\'95 Install from \f1 backend\\requirements.txt\f0\par
+\'95 Run migrations: \f1 python backend\\manage.py migrate\f0\par
+\'95 Start server: \f1 python backend\\manage.py runserver 0.0.0.0:8000\f0\par
+\pard\li720\sa60
+3) Frontend (Vite):\par
+\pard\li1080\sa60
+\'95 From \f1 frontend\f0: \f1 npm install\f0 then \f1 npm run dev\f0 (note the dev URL and port)\par
+\'95 Ensure \f1 VITE_API_BASE\f0 points to the backend URL if needed\par
+\pard\li720\sa60
+4) Open the frontend dev URL in a browser, sign up/login, and use the app.\par
+\pard\sa200
+
+\i Notes:\i0 This document summarizes implemented changes and the current state as of September 22, 2025. Microsoft Word can open this .rtf file; export to .docx if you prefer within Word.\par
+}

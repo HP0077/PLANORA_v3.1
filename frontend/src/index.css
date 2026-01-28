@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light dark; }
+
+html, body, #root { min-height: 100%; }
+body {
+	background: linear-gradient(135deg, #fff1f2 0%, #f5e1ff 50%, #ffe4e6 100%);
+	transition: background 300ms ease;
+}
+
+/* Chat wallpaper + scroll tweaks for a WhatsApp/Telegram vibe */
+.chat-wallpaper {
+	background-image:
+		radial-gradient(circle at 1rem 1rem, rgba(255,255,255,0.6) 0.08rem, transparent 0.1rem),
+		radial-gradient(circle at 3rem 2rem, rgba(255,255,255,0.35) 0.08rem, transparent 0.1rem),
+		radial-gradient(circle at 0.5rem 2.5rem, rgba(255,255,255,0.3) 0.08rem, transparent 0.1rem),
+		linear-gradient(135deg, #fdf4ff 0%, #f5f3ff 40%, #fff0f6 100%);
+	background-size: 4rem 4rem, 5rem 5rem, 6rem 6rem, 100% 100%;
+}
+html.dark .chat-wallpaper {
+	background-image:
+		radial-gradient(circle at 1rem 1rem, rgba(255,255,255,0.08) 0.08rem, transparent 0.1rem),
+		radial-gradient(circle at 3rem 2rem, rgba(255,255,255,0.06) 0.08rem, transparent 0.1rem),
+		radial-gradient(circle at 0.5rem 2.5rem, rgba(255,255,255,0.05) 0.08rem, transparent 0.1rem),
+		linear-gradient(135deg, #0b1224 0%, #0c1a35 40%, #0b1224 100%);
+}
+
+.thin-scrollbar::-webkit-scrollbar { width: 8px; }
+.thin-scrollbar::-webkit-scrollbar-thumb { background: rgba(120, 120, 128, 0.25); border-radius: 9999px; }
+.thin-scrollbar::-webkit-scrollbar-track { background: transparent; }
+html.dark .thin-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); }
+html.dark body {
+	background: linear-gradient(135deg, #020617 0%, #0b0223 50%, #020617 100%);
+}
+
+/* Shared UI primitives matching landing page feel */
+@layer components {
+	.card {
+		@apply rounded-2xl border border-white/40 bg-white/60 backdrop-blur-md shadow-lg shadow-fuchsia-200/40 dark:bg-slate-900/50 dark:border-white/10 dark:shadow-fuchsia-900/20;
+	}
+	.section {
+		@apply card p-6 md:p-8;
+	}
+	.btn {
+		@apply inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-fuchsia-300 dark:focus:ring-fuchsia-700 disabled:opacity-60 disabled:cursor-not-allowed;
+	}
+	.btn-primary {
+		@apply btn bg-gradient-to-r from-fuchsia-500 to-rose-500 text-white shadow-md hover:from-fuchsia-600 hover:to-rose-600 dark:from-fuchsia-600 dark:to-rose-600 dark:hover:from-fuchsia-700 dark:hover:to-rose-700;
+	}
+	.btn-secondary {
+		@apply btn bg-white/70 text-slate-900 hover:bg-white/90 dark:bg-slate-800/70 dark:text-slate-100 dark:hover:bg-slate-800;
+	}
+	.btn-outline {
+		@apply btn border border-fuchsia-400/60 text-fuchsia-700 hover:bg-fuchsia-50 dark:text-fuchsia-300 dark:border-fuchsia-700/50 dark:hover:bg-fuchsia-900/20;
+	}
+	.input {
+		@apply w-full rounded-xl border border-white/40 bg-white/70 px-3 py-2 text-slate-900 placeholder-slate-500 shadow-sm focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-300 dark:bg-slate-900/60 dark:text-slate-100 dark:placeholder-slate-400 dark:border-white/10 dark:focus:border-fuchsia-700 dark:focus:ring-fuchsia-800;
+	}
+	.select {
+		@apply input;
+	}
+	.label {
+		@apply block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1;
+	}
+}

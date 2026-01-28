@@ -1,0 +1,27 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Migrate and run dev server",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/c",
+				"\".venv\\Scripts\\activate && python manage.py makemigrations users chats files && python manage.py migrate && python manage.py runserver 0.0.0.0:8000\""
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$eslint - stylish"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run backend (SQLite, in-memory Channels)",
+			"type": "shell",
+			"command": "set USE_SQLITE=1 & set REDIS_URL=memory & call .venv\\Scripts\\activate.bat & python manage.py runserver",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}
