@@ -4,12 +4,14 @@ import { ArrowLeft } from 'lucide-react'
 import Navbar from '../../components/Navbar'
 import api from '../../services/api'
 import Toast from '../../components/Toast'
+import useAuthStore from '../../stores/authStore'
 
 export default function Register(){
   const [form, setForm] = useState({ username:'', email:'', password:'', first_name:'', last_name:'', role:'attendee' })
   const [error, setError] = useState('')
   const [toast, setToast] = useState('')
   const nav = useNavigate()
+  const login = useAuthStore(s => s.login)
 
   function set(k,v){ setForm(prev=>({ ...prev, [k]: v })) }
 
@@ -20,10 +22,7 @@ export default function Register(){
       await api.post('/users/register/', form)
       // auto login
   const { data } = await api.post('/users/token/', { username: form.username || form.email, password: form.password })
-  sessionStorage.setItem('access', data.access)
-  sessionStorage.setItem('refresh', data.refresh)
-      const me = await api.get('/users/me/', { auth: true })
-  sessionStorage.setItem('me', JSON.stringify(me.data))
+  await login(data)
   setToast('Account created! Welcome to Planora')
   setTimeout(()=> nav('/dashboard'), 300)
     }catch(err){

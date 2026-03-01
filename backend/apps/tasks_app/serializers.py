@@ -9,10 +9,11 @@ class GroupSerializer(serializers.ModelSerializer):
 
 class TaskSerializer(serializers.ModelSerializer):
     assignee_detail = serializers.SerializerMethodField(read_only=True)
+    event_name = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Task
-        fields = ['id', 'title', 'description', 'due_date', 'status', 'priority', 'event', 'group', 'assignee', 'assignee_detail', 'room', 'created_at']
-        read_only_fields = ['id', 'created_at']
+        fields = ['id', 'title', 'description', 'due_date', 'status', 'priority', 'event', 'group', 'assignee', 'assignee_detail', 'room', 'created_at', 'completed_at', 'event_name']
+        read_only_fields = ['id', 'created_at', 'completed_at']
 
     def validate(self, attrs):
         event = attrs.get('event') or getattr(self.instance, 'event', None)
@@ -30,3 +31,9 @@ class TaskSerializer(serializers.ModelSerializer):
             'username': getattr(u, 'username', None),
             'email': getattr(u, 'email', None),
         }
+
+    def get_event_name(self, obj):
+        try:
+            return obj.event.name
+        except Exception:
+            return None

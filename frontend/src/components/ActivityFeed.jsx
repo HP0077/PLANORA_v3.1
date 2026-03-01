@@ -74,25 +74,27 @@ export default function ActivityFeed({ eventId, visible }){
       {error && <div className="text-xs text-rose-600 dark:text-rose-300">{error}</div>}
       {!loading && !items.length && <div className="text-xs opacity-70">No activity yet.</div>}
       {!!items.length && (
-        <ul className="divide-y divide-slate-200 dark:divide-slate-800">
-          {items.map(entry => {
-            const actor = entry.actor?.username || 'System'
-            const ts = entry.created_at ? new Date(entry.created_at).toLocaleString() : ''
-            return (
-              <li key={entry.id} className="py-2">
-                <div className="text-sm">{describeEntry(entry)}</div>
-                <div className="text-xs opacity-70 flex items-center gap-2">
-                  <span>{actor}</span>
-                  <span>•</span>
-                  <span>{ts}</span>
-                  {entry.payload?.matched_conditions?.length ? (
-                    <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200 text-[11px]">why: {entry.payload.matched_conditions.join(', ')}</span>
-                  ) : null}
-                </div>
-              </li>
-            )
-          })}
-        </ul>
+        <div className="max-h-80 overflow-y-auto pr-1">
+          <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+            {items.map(entry => {
+              const actor = entry.actor?.username || 'System'
+              const ts = entry.created_at ? new Date(entry.created_at).toLocaleString() : ''
+              return (
+                <li key={entry.id} className="py-2">
+                  <div className="text-sm">{describeEntry(entry)}</div>
+                  <div className="text-xs opacity-70 flex items-center gap-2">
+                    <span>{actor}</span>
+                    <span>•</span>
+                    <span>{ts}</span>
+                    {entry.payload?.matched_conditions?.length ? (
+                      <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200 text-[11px]">why: {entry.payload.matched_conditions.join(', ')}</span>
+                    ) : null}
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
       )}
     </div>
   )

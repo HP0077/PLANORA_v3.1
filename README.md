@@ -138,8 +138,21 @@ npm run dev
 - Mixed REST/WS hosts: set `VITE_API_BASE` and `VITE_WS_BASE` explicitly to the same domain/port to avoid CORS or connection failures.
 - Stale server after code change: restart Daphne so new routes/serializers load; `runserver` alone will not serve WebSockets.
 
+---
 
-1) Backend env and install
+## How to Run This Project (Copy-Paste Ready — Windows)
+
+> **Prerequisites:** Python 3.10+, Node.js 18+, and Git installed on your PC.
+
+**FIRST OPEN 2 COMMAND PROMPT WINDOWS (CMD)**
+
+Then do the Backend part in the **1st CMD** and the Frontend part in the **2nd CMD**.
+
+---
+
+### CMD 1 — Backend
+
+Copy-paste this block into your **first CMD window** (line by line):
 
 ```
 cd c:\Users\User\Desktop\planora_v3.0\backend
@@ -148,29 +161,103 @@ python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py runserver 127.0.0.1:8001
-or 
-python manage.py runserver
+daphne -b 127.0.0.1 -p 8001 planora_backend.asgi:application
+```
 
-C:\Users\User\Desktop\planora_v3.0\.venv\Scripts\python.exe manage.py runserver 127.0.0.1:8001
+> If `copy .env.example .env` asks "Overwrite .env? (Yes/No/All):", type **N** and press Enter.
+>
+> Keep this window open. Backend will be running at **http://127.0.0.1:8001**
+>
+> **Note:** We use Daphne (ASGI server) instead of `runserver` because it supports both HTTP and WebSockets, which is required for real-time chat.
 
-Frontend:
+---
+
+### CMD 2 — Frontend
+
+Copy-paste this block into your **second CMD window** (line by line):
 
 ```
-cd c:\Users\User\Desktop\planora_v3.0\frontend
+cd /d C:\Users\User\Desktop\planora_v3.0\frontend
 npm install
-npm run dev
+set VITE_API_BASE=http://127.0.0.1:8001/api
+set VITE_WS_BASE=ws://127.0.0.1:8001
+npm run dev -- --host --port 5173
+```
 
-or
+> Keep this window open. Frontend will be running at **http://localhost:5173**
 
+---
+
+### CMD 3 — Ollama AI Assistant (Optional)
+
+If you want the AI Assistant feature, install [Ollama](https://ollama.com) and open a **third CMD window**:
+
+```
+ollama serve
+```
+
+In another terminal:
+
+```
+ollama pull llama3
+```
+
+---
+
+### Summary
+
+| CMD Window | What it runs | URL |
+|------------|-------------|-----|
+| 1 — Backend | `daphne -b 127.0.0.1 -p 8001 planora_backend.asgi:application` | http://127.0.0.1:8001 |
+| 2 — Frontend | `npm run dev -- --host --port 5173` | http://localhost:5173 |
+| 3 — Ollama (optional) | `ollama serve` | http://localhost:11434 |
+
+---
+
+### Quick Restart (if you closed everything)
+
+**CMD 1 — Backend:**
+```
+cd c:\Users\User\Desktop\planora_v3.0\backend
+.venv\Scripts\activate
+daphne -b 127.0.0.1 -p 8001 planora_backend.asgi:application
+```
+
+**CMD 2 — Frontend:**
+```
 cd /d C:\Users\User\Desktop\planora_v3.0\frontend
 set VITE_API_BASE=http://127.0.0.1:8001/api
+set VITE_WS_BASE=ws://127.0.0.1:8001
 npm run dev -- --host --port 5173
+```
 
-Ollama COMMAND:
 
-'''
+**OLD COMMANDS:**
+```
+FIRST OPEN 2 COMMAND PROMPT WINDOWS (CMD):
 
-ollama serve 
+THEN DO THE BACKEND PART IN FIRST ONE AND 
+FRONTEND PART IN SECOND ONE
 
-ollama run llama3
+
+        1) Backend env and install
+
+        ```
+        cd c:\Users\User\Desktop\planora_v3.0\backend
+        copy .env.example .env       (#TYPE NO and ENTER , if it asks)
+        python -m venv .venv
+        .venv\Scripts\activate
+        pip install -r requirements.txt
+        python manage.py migrate
+        python manage.py runserver 127.0.0.1:8001  
+
+        ```
+
+        2) Frontend 
+
+        ```
+        cd /d C:\Users\User\Desktop\planora_v3.0\frontend
+        npm install
+        set VITE_API_BASE=http://127.0.0.1:8001/api
+        npm run dev -- --host --port 5173
+```

@@ -12,7 +12,7 @@ export default function Certificates(){
   const [loading, setLoading] = useState(false)
 
   const baseUrl = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api'
-  const token = sessionStorage.getItem('access') || localStorage.getItem('access')
+  const token = localStorage.getItem('access') || sessionStorage.getItem('access')
 
   useEffect(()=>{(async()=>{
     try{

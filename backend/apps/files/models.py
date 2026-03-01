@@ -15,5 +15,10 @@ class FileAsset(models.Model):
     size = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['room', '-created_at']),
+        ]
+
     def __str__(self):
         return f"{self.file.name} ({self.room_id})"

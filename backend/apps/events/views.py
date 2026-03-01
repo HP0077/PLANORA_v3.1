@@ -1,6 +1,9 @@
+import logging
+
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from .models import Event
 from django.db.models import Q
 from .serializers import EventSerializer
@@ -8,13 +11,22 @@ from django.utils import timezone
 from apps.event_intelligence.services import compute_event_profile, compute_event_profiles
 from apps.event_intelligence.serializers import EventProfileSerializer
 
+logger = logging.getLogger(__name__)
+
 class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         u = self.request.user
-        return Event.objects.filter(Q(owner=u) | Q(participants=u)).distinct().order_by('-created_at')
+        return (
+            Event.objects
+            .select_related('owner')
+            .prefetch_related('participants')
+            .filter(Q(owner=u) | Q(participants=u))
+            .distinct()
+            .order_by('-created_at')
+        )
 
     def perform_create(self, serializer):
         event = serializer.save(owner=self.request.user)
@@ -28,7 +40,6 @@ class EventViewSet(viewsets.ModelViewSet):
         # only owner can update
         instance = self.get_object()
         if instance.owner_id != self.request.user.id:
-            from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied('Only the event owner can update this event')
         serializer.save()
 
@@ -37,7 +48,6 @@ class EventViewSet(viewsets.ModelViewSet):
         ev = self.get_object()
         # Only owner/PM can generate
         if ev.owner_id != request.user.id:
-            from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied('Only the event owner can generate a meeting link')
         # Stub generation; integrate Google Meet API later
         ev.meeting_link = ev.meeting_link or f"https://meet.example.com/{ev.id}-{timezone.now().strftime('%H%M%S')}"

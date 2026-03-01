@@ -31,6 +31,14 @@ class Task(models.Model):
     group = models.ForeignKey(Group, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks')
     assignee = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tasks')
     created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['event', 'status']),
+            models.Index(fields=['due_date', 'status']),
+            models.Index(fields=['assignee', 'status']),
+        ]
 
     def __str__(self):
         return self.title

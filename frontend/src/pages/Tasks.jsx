@@ -1,6 +1,25 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import api from '../services/api'
 import Navbar from '../components/Navbar'
+import useAuthStore from '../stores/authStore'
+
+const STATUS_OPTIONS = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'done', label: 'Done' },
+]
+
+const STATUS_STYLES = {
+  pending: 'bg-amber-50 text-amber-700 ring-amber-200',
+  in_progress: 'bg-sky-50 text-sky-700 ring-sky-200',
+  done: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+}
+
+const STATUS_DOTS = {
+  pending: 'bg-amber-500',
+  in_progress: 'bg-sky-500',
+  done: 'bg-emerald-500',
+}
 
 export default function Tasks(){
   const [events, setEvents] = useState([])
@@ -10,25 +29,99 @@ export default function Tasks(){
   const [error, setError] = useState('')
   const [assigneeQuery, setAssigneeQuery] = useState('')
   const [assigneeResults, setAssigneeResults] = useState([])
-  const [me, setMe] = useState(null)
+  const me = useAuthStore(s => s.user)
   const [deletingId, setDeletingId] = useState(null)
+  const [updatingId, setUpdatingId] = useState(null)
+  const [sortBy, setSortBy] = useState('priority')
+  const POLL_INTERVAL_MS = 10000
+  const socketsRef = useRef(new Map())
 
-  useEffect(()=>{(async()=>{
+  const sortTasks = (list, mode = sortBy, evList = events)=>{
+    const order = { high: 0, medium: 1, low: 2 }
+    const copy = Array.isArray(list) ? [...list] : []
+    if(mode === 'event'){
+      copy.sort((a,b)=>{
+        const nameA = (evList.find(ev=> String(ev.id)===String(taskEventId(a)))?.name || '').toLowerCase()
+        const nameB = (evList.find(ev=> String(ev.id)===String(taskEventId(b)))?.name || '').toLowerCase()
+        return nameA.localeCompare(nameB) || (order[a.priority||'medium'] - order[b.priority||'medium']) || (new Date(b.created_at) - new Date(a.created_at))
+      })
+    }else{
+      copy.sort((a,b)=> (order[a.priority||'medium'] - order[b.priority||'medium']) || (new Date(b.created_at) - new Date(a.created_at)))
+    }
+    return copy
+  }
+
+  const fetchTasks = useCallback(async ()=>{
     try{
-      const [meRes, ev] = await Promise.all([
-        api.get('/users/me/', { auth: true }),
-        api.get('/events/', { auth: true })
-      ])
-      setMe(meRes.data || null)
-      setEvents(ev.data?.results ?? ev.data ?? [])
       const t = await api.get('/tasks/', { auth: true })
       const list = t.data?.results ?? t.data ?? []
       const arr = Array.isArray(list) ? list : []
-      const order = { high: 0, medium: 1, low: 2 }
-      arr.sort((a,b)=> (order[a.priority||'medium'] - order[b.priority||'medium']) || (new Date(b.created_at) - new Date(a.created_at)))
-      setTasks(arr)
+      setTasks(prev=> sortTasks(arr, sortBy, events))
+    }catch(e){ setError('Failed to load tasks') }
+  }, [events, sortBy])
+
+  useEffect(()=>{(async()=>{
+    try{
+      const ev = await api.get('/events/', { auth: true })
+      setEvents(ev.data?.results ?? ev.data ?? [])
     }catch(e){ setError('Failed to load tasks/events') }
   })()},[])
+
+  useEffect(()=>{
+    fetchTasks()
+    const id = setInterval(fetchTasks, POLL_INTERVAL_MS)
+    return ()=> clearInterval(id)
+  }, [fetchTasks])
+
+  // Real-time websocket subscription per event
+  useEffect(()=>{
+    const token = localStorage.getItem('access') || sessionStorage.getItem('access')
+    if(!token) return
+    const wsBase = (import.meta.env.VITE_WS_BASE || window.location.origin).replace(/^http/, 'ws').replace(/\/$/, '')
+    const neededEventIds = new Set()
+    events.forEach(ev=> neededEventIds.add(String(ev.id)))
+    tasks.forEach(t=>{ const id = taskEventId(t); if(id) neededEventIds.add(String(id)) })
+
+    // Open missing sockets
+    neededEventIds.forEach(eventId=>{
+      const key = String(eventId)
+      if(socketsRef.current.has(key)) return
+      const ws = new WebSocket(`${wsBase}/ws/tasks/${key}/?token=${encodeURIComponent(token)}`)
+      ws.onmessage = (ev)=>{
+        try{
+          const msg = JSON.parse(ev.data)
+          if(msg?.type === 'task'){
+            if(msg.action === 'deleted'){
+              const id = msg.task_id || msg.task?.id
+              setTasks(prev=> sortTasks(prev.filter(x=> x.id !== id), sortBy, events))
+            }else if(msg.task){
+              const task = msg.task
+              setTasks(prev=>{
+                const without = prev.filter(x=> x.id !== task.id)
+                return sortTasks([...without, task], sortBy, events)
+              })
+            }
+          }
+        }catch(err){ /* ignore parse errors */ }
+      }
+      ws.onclose = ()=>{ socketsRef.current.delete(key) }
+      socketsRef.current.set(key, ws)
+    })
+
+    // Close sockets no longer needed
+    Array.from(socketsRef.current.keys()).forEach(key=>{
+      if(!neededEventIds.has(key)){
+        const ws = socketsRef.current.get(key)
+        ws?.close()
+        socketsRef.current.delete(key)
+      }
+    })
+
+    return ()=>{
+      Array.from(socketsRef.current.values()).forEach(ws=> ws?.close())
+      socketsRef.current.clear()
+    }
+  }, [events, tasks, sortBy])
 
   async function createTask(e){
     e.preventDefault()
@@ -37,7 +130,7 @@ export default function Tasks(){
     try{
       const payload = { ...form, assignee: form.assignee || null, event: selectedEvent }
       const { data } = await api.post('/tasks/', payload, { auth: true })
-      setTasks(prev=> [data, ...prev])
+      setTasks(prev=> sortTasks([data, ...prev]))
       setForm({ title:'', description:'', due_date:'', status:'pending', priority:'medium', assignee:'' })
     }catch(e){ setError('Failed to create task') }
   }
@@ -60,6 +153,37 @@ export default function Tasks(){
       setTasks(prev)
       setError('Failed to delete task')
     }finally{ setDeletingId(null) }
+  }
+
+  const taskEventId = (t)=> t?.event?.id ?? t?.event_id ?? t?.event
+  const taskOwnerId = (t)=>{
+    const evId = taskEventId(t)
+    return events.find(ev=> String(ev.id) === String(evId))?.owner_id
+  }
+
+  const canEditStatus = (t)=>{
+    if(!me) return false
+    const isOwner = taskOwnerId(t) === me.id
+    const isAssignee = String(t.assignee || t.assignee_id) === String(me.id)
+    return isOwner || isAssignee
+  }
+
+  const formatStatusLabel = (status)=> STATUS_OPTIONS.find(o=>o.value===status)?.label || status
+
+  async function updateTaskStatus(taskId, nextStatus){
+    if(!taskId || !nextStatus) return
+    const target = tasks.find(t=> t.id === taskId)
+    if(!target || target.status === nextStatus) return
+    const prevStatus = target.status
+    setError('')
+    setUpdatingId(taskId)
+    setTasks(prev=> sortTasks(prev.map(t=> t.id===taskId ? { ...t, status: nextStatus } : t)))
+    try{
+      await api.patch(`/tasks/${taskId}/`, { status: nextStatus }, { auth: true })
+    }catch(e){
+      setTasks(prev=> sortTasks(prev.map(t=> t.id===taskId ? { ...t, status: prevStatus } : t)))
+      setError('Failed to update status')
+    }finally{ setUpdatingId(null) }
   }
 
   return (
@@ -116,22 +240,55 @@ export default function Tasks(){
   )}
         </div>
 
+        <div className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
+          <span className="uppercase tracking-wide text-xs text-slate-500">Sort</span>
+          <select className="input w-48" value={sortBy} onChange={e=>{ const val = e.target.value; setSortBy(val); setTasks(prev=> sortTasks(prev, val)) }}>
+            <option value="priority">Priority (High → Low)</option>
+            <option value="event">Event name (A → Z)</option>
+          </select>
+        </div>
+
         <div className="grid gap-3">
           {tasks.map(t=> (
             <div key={t.id} className="card p-4">
-              <div className="flex justify-between gap-3">
-                <div className="font-semibold text-slate-900 dark:text-slate-100">{t.title} <span className="text-xs opacity-60">[{t.status}]</span></div>
-                {(me && events.find(ev=> String(ev.id) === String(t.event || t.event_id || t.event?.id))?.owner_id === me.id) && (
-                  <button
-                    className="text-sm text-rose-700 dark:text-rose-300 hover:underline disabled:opacity-60"
-                    disabled={deletingId===t.id}
-                    onClick={()=>deleteTask(t.id)}
-                  >{deletingId===t.id ? 'Deleting…' : 'Delete'}</button>
-                )}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="font-semibold text-slate-900 dark:text-slate-100">{t.title}</div>
+                <div className="flex items-center gap-3">
+                  {canEditStatus(t) ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs uppercase tracking-wide text-slate-500">Status</span>
+                      <span className={`h-2.5 w-2.5 rounded-full ${STATUS_DOTS[t.status] || 'bg-slate-400'}`}></span>
+                      <select
+                        className="input text-sm w-36"
+                        value={t.status}
+                        onChange={e=>updateTaskStatus(t.id, e.target.value)}
+                        disabled={updatingId===t.id}
+                      >
+                        {STATUS_OPTIONS.map(opt=> <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                      </select>
+                    </div>
+                  ) : (
+                    <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ring-1 ${STATUS_STYLES[t.status] || 'bg-slate-100 text-slate-700 ring-slate-200'}`}>
+                      <span className={`h-2.5 w-2.5 rounded-full ${STATUS_DOTS[t.status] || 'bg-slate-400'}`}></span>
+                      {formatStatusLabel(t.status)}
+                    </span>
+                  )}
+                  {(me && taskOwnerId(t) === me.id) && (
+                    <button
+                      className="text-sm text-rose-700 dark:text-rose-300 hover:underline disabled:opacity-60"
+                      disabled={deletingId===t.id}
+                      onClick={()=>deleteTask(t.id)}
+                    >{deletingId===t.id ? 'Deleting…' : 'Delete'}</button>
+                  )}
+                </div>
               </div>
               <div className="text-sm text-slate-700 dark:text-slate-300 opacity-90">Due: {t.due_date || '\u2014'}</div>
               <div className="text-sm text-slate-700 dark:text-slate-300 opacity-90">Priority: {t.priority}</div>
+              {t.status === 'done' && t.completed_at && (
+                <div className="text-sm text-emerald-600 dark:text-emerald-400 opacity-90">Completed: {new Date(t.completed_at).toLocaleString()}</div>
+              )}
               <div className="text-sm text-slate-700 dark:text-slate-300 opacity-90">Assignee: {t.assignee_detail?.username || t.assignee_detail?.email || (t.assignee ? `#${t.assignee}` : '\u2014')}</div>
+              <div className="text-sm text-slate-700 dark:text-slate-300 opacity-90">Event: {events.find(ev=> String(ev.id)===String(taskEventId(t)))?.name || 'Unknown event'}</div>
             </div>
           ))}
           {!tasks.length && <div className="opacity-70">No tasks yet.</div>}

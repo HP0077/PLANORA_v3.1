@@ -1,3 +1,5 @@
+import logging
+
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
@@ -10,6 +12,8 @@ from datetime import timedelta
 from rest_framework.exceptions import PermissionDenied
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+
+logger = logging.getLogger(__name__)
 
 class IsManagerOrOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj: ChatRoom):
@@ -25,20 +29,18 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         u = self.request.user
         # Rooms where user is a member or event owner
-        return ChatRoom.objects.filter(Q(event__owner=u) | Q(memberships__user=u)).distinct()
+        return ChatRoom.objects.select_related('event').filter(Q(event__owner=u) | Q(memberships__user=u)).distinct()
 
     def perform_create(self, serializer):
         # Only event owner can create
         event = serializer.validated_data.get('event')
         if not event or event.owner_id != self.request.user.id:
-            from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied('Only the event owner can create a group for this event')
         serializer.save()
 
     def perform_destroy(self, instance: ChatRoom):
         # Only event owner can delete the group
         if instance.event.owner_id != self.request.user.id:
-            from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied('Only the event owner can delete this group')
         instance.delete()
 
@@ -127,7 +129,7 @@ class MessageViewSet(viewsets.ModelViewSet):
                 {"type": "chat_deleted", "message_id": msg_id}
             )
         except Exception:
-            pass
+            logger.exception("Failed to broadcast message deletion room=%s msg=%s", room_id, msg_id)
 
         return response
 
@@ -139,13 +141,11 @@ class MessageViewSet(viewsets.ModelViewSet):
         MessageRead.objects.get_or_create(message=msg, user=u)
         # Broadcast WS read event (best-effort)
         try:
-            from asgiref.sync import async_to_sync
-            from channels.layers import get_channel_layer
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f"chat_{msg.room_id}",
                 {"type": "chat_read", "message_id": msg.id, "user_id": u.id}
             )
         except Exception:
-            pass
+            logger.exception("Failed to broadcast read receipt room=%s msg=%s", msg.room_id, msg.id)
         return Response({'ok': True})

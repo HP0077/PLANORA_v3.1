@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 import Navbar from '../../components/Navbar'
 import api from '../../services/api'
 import Toast from '../../components/Toast'
+import useAuthStore from '../../stores/authStore'
 
 export default function Login(){
   const [username, setUsername] = useState('')
@@ -12,6 +13,7 @@ export default function Login(){
   const [loading, setLoading] = useState(false)
   const nav = useNavigate()
   const [toast, setToast] = useState('')
+  const login = useAuthStore(s => s.login)
 
   async function submit(e){
     e.preventDefault()
@@ -20,10 +22,7 @@ export default function Login(){
     try{
   const payload = { username: username.trim(), password }
   const { data } = await api.post('/users/token/', payload)
-  sessionStorage.setItem('access', data.access)
-  sessionStorage.setItem('refresh', data.refresh)
-  const me = await api.get('/users/me/', { auth: true })
-  sessionStorage.setItem('me', JSON.stringify(me.data))
+  await login(data)
   setToast('Welcome back!')
   setTimeout(()=> nav('/dashboard'), 250)
     }catch(err){

@@ -176,3 +176,273 @@ def build_prompt(user, event_id: int, question: str) -> Dict[str, str]:
         'prompt': prompt,
         'question': sanitized_question,
     }
+
+
+# ---------------------------------------------------------------------------
+# Tier 1 GenAI prompt builders
+# ---------------------------------------------------------------------------
+
+def build_description_prompt(event_name: str, event_type: str, audience: str,
+                              keywords: str, tone: str) -> str:
+    """Build a prompt that generates a polished event description."""
+    prompt = (
+        "You are Planora's event copywriter AI.\n"
+        "Write a compelling event description (120-200 words) based on the details below.\n"
+        f"- Tone: {tone}\n"
+        "- Do NOT invent dates, prices, or speaker names unless explicitly provided.\n"
+        "- Return ONLY the description text, no headings or labels.\n\n"
+        f"Event name: {event_name}\n"
+    )
+    if event_type:
+        prompt += f"Event type: {event_type}\n"
+    if audience:
+        prompt += f"Target audience: {audience}\n"
+    if keywords:
+        prompt += f"Keywords / highlights: {keywords}\n"
+    prompt += "\nDescription:"
+    return prompt[:CONTEXT_MAX_CHARS]
+
+
+def build_task_suggestions_prompt(user, event_id: int, additional_context: str = '') -> str:
+    """Build a prompt that suggests tasks for an event."""
+    try:
+        event = Event.objects.select_related('owner').prefetch_related('participants').get(id=event_id)
+    except Event.DoesNotExist:
+        raise ValueError('Event not found')
+
+    if not (event.owner_id == user.id or event.participants.filter(id=user.id).exists()):
+        raise PermissionError('Not allowed for this event')
+
+    task_counts = _task_counts(event_id)
+    existing_titles = list(
+        Task.objects.filter(event_id=event_id)
+        .values_list('title', flat=True)[:20]
+    )
+
+    prompt = (
+        "You are Planora's event planning AI.\n"
+        "Suggest 5-8 actionable tasks for this event. For each task provide:\n"
+        "- Title (short)\n"
+        "- Priority: low / medium / high\n"
+        "- Suggested days-before-event to set as deadline\n"
+        "- One-sentence description\n\n"
+        "Format each task as:\n"
+        "TASK: <title> | PRIORITY: <priority> | DAYS_BEFORE: <number> | DESC: <description>\n\n"
+        "Do NOT duplicate existing tasks. Do NOT invent participant names.\n\n"
+        f"Event: {event.name}\n"
+        f"Status: {event.status}\n"
+        f"Mode: {event.mode}\n"
+        f"Date: {event.date}\n"
+        f"Current task stats: {task_counts}\n"
+        f"Existing tasks: {', '.join(existing_titles) if existing_titles else 'None yet'}\n"
+    )
+    if additional_context:
+        prompt += f"Additional context: {additional_context}\n"
+    prompt += "\nSuggested tasks:"
+    return prompt[:CONTEXT_MAX_CHARS]
+
+
+def build_event_summary_prompt(user, event_id: int, fmt: str = 'brief') -> str:
+    """Build a prompt that generates a status summary / report for an event."""
+    try:
+        event = Event.objects.select_related('owner').prefetch_related('participants').get(id=event_id)
+    except Event.DoesNotExist:
+        raise ValueError('Event not found')
+
+    if not (event.owner_id == user.id or event.participants.filter(id=user.id).exists()):
+        raise PermissionError('Not allowed for this event')
+
+    profile = EventProfile.objects.filter(event_id=event_id).first()
+    budget = BudgetHealth.objects.filter(event_id=event_id).first()
+    task_counts = _task_counts(event_id)
+    overdue_count, overdue_titles = _overdue_tasks(event_id)
+    cert_stats = _certificate_stats(event_id)
+    participants_count = event.participants.count()
+
+    length_guide = "150-250 words" if fmt == 'detailed' else "80-120 words"
+
+    context = (
+        f"Event: {event.name}\n"
+        f"Status: {event.status}\n"
+        f"Mode: {event.mode}\n"
+        f"Date: {event.date} {event.time}\n"
+        f"Participants: {participants_count}\n"
+    )
+    if profile:
+        context += (
+            f"Risk score: {profile.risk_score}\n"
+            f"Readiness: {profile.readiness_score}\n"
+            f"Engagement: {profile.engagement_score}\n"
+        )
+    context += (
+        f"Tasks — total: {task_counts.get('total', 0)}, pending: {task_counts.get('pending', 0)}, "
+        f"in_progress: {task_counts.get('in_progress', 0)}, done: {task_counts.get('done', 0)}\n"
+        f"Overdue: {overdue_count} ({', '.join(overdue_titles) if overdue_titles else 'none'})\n"
+    )
+    if budget:
+        context += (
+            f"Budget — estimated: {budget.total_estimated}, actual: {budget.total_actual}, "
+            f"variance: {budget.variance}, status: {budget.status}\n"
+        )
+    context += f"Certificates: {cert_stats}\n"
+
+    prompt = (
+        "You are Planora's event reporting AI.\n"
+        f"Write a {fmt} status report ({length_guide}) for this event.\n"
+        "Structure: opening summary sentence, then sections for Tasks, Budget, Risk, and a closing recommendation.\n"
+        "Use bullet points for key metrics. Do NOT invent data.\n\n"
+        f"{context}\n"
+        "Report:"
+    )
+    return prompt[:CONTEXT_MAX_CHARS]
+
+
+def build_risk_mitigation_prompt(user, event_id: int) -> str:
+    """Build a prompt that suggests risk mitigation actions based on event profile."""
+    try:
+        event = Event.objects.select_related('owner').prefetch_related('participants').get(id=event_id)
+    except Event.DoesNotExist:
+        raise ValueError('Event not found')
+
+    if not (event.owner_id == user.id or event.participants.filter(id=user.id).exists()):
+        raise PermissionError('Not allowed for this event')
+
+    profile = EventProfile.objects.filter(event_id=event_id).first()
+    budget = BudgetHealth.objects.filter(event_id=event_id).first()
+    task_counts = _task_counts(event_id)
+    overdue_count, overdue_titles = _overdue_tasks(event_id)
+
+    risk_data = "No intelligence profile computed yet."
+    if profile:
+        risk_data = (
+            f"Risk score: {profile.risk_score:.2f} (0=safe, 1=critical)\n"
+            f"Readiness: {profile.readiness_score:.2f}\n"
+            f"Overdue tasks: {profile.overdue_tasks}\n"
+            f"Budget variance: {profile.budget_variance}\n"
+            f"Inactivity days: {profile.inactivity_days}\n"
+            f"Missing meeting link: {profile.missing_meeting}\n"
+        )
+
+    budget_data = "No budget data."
+    if budget:
+        budget_data = (
+            f"Budget status: {budget.status}, estimated: {budget.total_estimated}, "
+            f"actual: {budget.total_actual}, variance: {budget.variance}\n"
+        )
+
+    prompt = (
+        "You are Planora's risk mitigation AI advisor.\n"
+        "Analyze the risk profile below and provide:\n"
+        "1. A one-sentence risk assessment\n"
+        "2. A numbered list of 3-5 specific, actionable mitigation steps\n"
+        "3. For each step, explain WHY it helps reduce risk\n\n"
+        "Be specific and reference the actual data. Do NOT invent data.\n\n"
+        f"Event: {event.name}\n"
+        f"Status: {event.status}\n"
+        f"Mode: {event.mode}\n"
+        f"Date: {event.date}\n"
+        f"{risk_data}\n"
+        f"Task stats: total={task_counts.get('total', 0)}, pending={task_counts.get('pending', 0)}, "
+        f"overdue={overdue_count}\n"
+        f"Top overdue tasks: {', '.join(overdue_titles) if overdue_titles else 'None'}\n"
+        f"{budget_data}\n"
+        "Risk mitigation plan:"
+    )
+    return prompt[:CONTEXT_MAX_CHARS]
+
+
+def build_draft_email_prompt(user, event_id: int, template_type: str,
+                              recipient_name: str = '', additional_notes: str = '',
+                              tone: str = 'professional') -> str:
+    """Build a prompt that drafts an email/invitation for an event."""
+    try:
+        event = Event.objects.select_related('owner').prefetch_related('participants').get(id=event_id)
+    except Event.DoesNotExist:
+        raise ValueError('Event not found')
+
+    if not (event.owner_id == user.id or event.participants.filter(id=user.id).exists()):
+        raise PermissionError('Not allowed for this event')
+
+    participants_count = event.participants.count()
+
+    template_instructions = {
+        'invitation': (
+            "Write an event invitation email that:\n"
+            "- Opens with an engaging hook\n"
+            "- Clearly states the event name, date, time, and mode\n"
+            "- Highlights why they should attend\n"
+            "- Includes a clear call-to-action (RSVP / register)\n"
+            "- Closes warmly\n"
+        ),
+        'reminder': (
+            "Write a friendly reminder email that:\n"
+            "- Reminds them the event is coming up soon\n"
+            "- Restates the event name, date, time, and mode\n"
+            "- Mentions any preparation needed\n"
+            "- Creates a sense of excitement\n"
+        ),
+        'thank_you': (
+            "Write a post-event thank you email that:\n"
+            "- Thanks them for attending/participating\n"
+            "- Highlights key moments or achievements\n"
+            "- Mentions next steps or upcoming events if applicable\n"
+            "- Asks for feedback\n"
+        ),
+        'follow_up': (
+            "Write a follow-up email that:\n"
+            "- References the event they attended\n"
+            "- Shares any resources or materials discussed\n"
+            "- Proposes next steps or action items\n"
+            "- Encourages continued engagement\n"
+        ),
+        'cancellation': (
+            "Write an event cancellation email that:\n"
+            "- Clearly states the event is cancelled\n"
+            "- Provides a brief, honest reason (keep it professional)\n"
+            "- Apologizes for the inconvenience\n"
+            "- Mentions rescheduling plans if applicable\n"
+            "- Offers contact info for questions\n"
+        ),
+        'update': (
+            "Write an event update email that:\n"
+            "- Clearly states what has changed (date, time, venue, format, etc.)\n"
+            "- Restates the updated event details\n"
+            "- Explains why the change was made (briefly)\n"
+            "- Reassures attendees and maintains excitement\n"
+        ),
+    }
+
+    instructions = template_instructions.get(template_type, template_instructions['invitation'])
+
+    prompt = (
+        "You are Planora's email copywriter AI.\n"
+        f"Draft a {template_type.replace('_', ' ')} email for this event.\n"
+        f"Tone: {tone}\n\n"
+        f"{instructions}\n"
+        "Format the output as:\n"
+        "SUBJECT: <email subject line>\n"
+        "---\n"
+        "<email body>\n\n"
+        "Rules:\n"
+        "- Keep it 100-200 words\n"
+        "- Do NOT invent details not provided (speaker names, prices, etc.)\n"
+        "- Use the actual event details below\n"
+        f"- If a meeting link exists, include it\n\n"
+        f"Event: {event.name}\n"
+        f"Date: {event.date}\n"
+        f"Time: {event.time}\n"
+        f"Mode: {event.mode}\n"
+        f"Status: {event.status}\n"
+        f"Current participants: {participants_count}\n"
+    )
+    if event.meeting_link:
+        prompt += f"Meeting link: {event.meeting_link}\n"
+    if event.description:
+        prompt += f"Event description: {event.description[:200]}\n"
+    if recipient_name:
+        prompt += f"Recipient name: {recipient_name}\n"
+    if additional_notes:
+        prompt += f"Additional notes: {additional_notes}\n"
+
+    prompt += "\nEmail:"
+    return prompt[:CONTEXT_MAX_CHARS]

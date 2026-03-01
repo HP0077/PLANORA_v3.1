@@ -73,17 +73,114 @@ def _post_system_message(event: Event, text: str):
 
 
 def _render_certificate_pdf(name: str, event_name: str) -> bytes:
-    """Render a simple certificate PDF for a recipient and event name."""
+    """Render a professional certificate PDF (landscape A4) for a recipient."""
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.colors import HexColor
+
+    W, H = landscape(A4)  # 842 x 595
     buffer = BytesIO()
-    p = canvas.Canvas(buffer)
-    p.setFont('Helvetica-Bold', 24)
-    p.drawString(100, 750, 'Certificate of Participation')
-    p.setFont('Helvetica', 16)
-    p.drawString(100, 700, f"This certifies that {name}")
-    p.setFont('Helvetica', 12)
-    p.drawString(100, 670, f"For: {event_name}")
-    p.drawString(100, 640, f"Issued on: {timezone.now().date()}")
-    p.showPage(); p.save(); buffer.seek(0)
+    p = canvas.Canvas(buffer, pagesize=(W, H))
+
+    # ── Background ──────────────────────────────────────────────
+    p.setFillColor(HexColor('#FFFDF7'))
+    p.rect(0, 0, W, H, stroke=0, fill=1)
+
+    # ── Outer border (double-line effect) ───────────────────────
+    p.setStrokeColor(HexColor('#B8860B'))  # dark gold
+    p.setLineWidth(4)
+    p.rect(25, 25, W - 50, H - 50, stroke=1, fill=0)
+    p.setStrokeColor(HexColor('#DAA520'))  # lighter gold
+    p.setLineWidth(1.5)
+    p.rect(35, 35, W - 70, H - 70, stroke=1, fill=0)
+
+    # ── Corner ornaments (small gold diamonds) ──────────────────
+    p.setFillColor(HexColor('#DAA520'))
+    for cx, cy in [(50, 50), (50, H - 50), (W - 50, 50), (W - 50, H - 50)]:
+        p.saveState()
+        p.translate(cx, cy)
+        p.rotate(45)
+        p.rect(-5, -5, 10, 10, stroke=0, fill=1)
+        p.restoreState()
+
+    # ── Top decorative line ─────────────────────────────────────
+    mid_x = W / 2
+    p.setStrokeColor(HexColor('#DAA520'))
+    p.setLineWidth(1)
+    p.line(mid_x - 180, H - 100, mid_x + 180, H - 100)
+    # small diamond in center of line
+    p.setFillColor(HexColor('#DAA520'))
+    p.saveState()
+    p.translate(mid_x, H - 100)
+    p.rotate(45)
+    p.rect(-4, -4, 8, 8, stroke=0, fill=1)
+    p.restoreState()
+
+    # ── Title ───────────────────────────────────────────────────
+    p.setFillColor(HexColor('#1a1a2e'))
+    p.setFont('Times-Bold', 38)
+    p.drawCentredString(mid_x, H - 145, 'Certificate of Participation')
+
+    # ── Subtitle ────────────────────────────────────────────────
+    p.setFillColor(HexColor('#555555'))
+    p.setFont('Times-Roman', 14)
+    p.drawCentredString(mid_x, H - 175, 'This certificate is proudly presented to')
+
+    # ── Recipient name ──────────────────────────────────────────
+    p.setFillColor(HexColor('#B8860B'))
+    p.setFont('Times-BoldItalic', 34)
+    p.drawCentredString(mid_x, H - 230, name)
+
+    # Underline beneath name
+    name_half_w = min(p.stringWidth(name, 'Times-BoldItalic', 34) / 2 + 30, 250)
+    p.setStrokeColor(HexColor('#DAA520'))
+    p.setLineWidth(1)
+    p.line(mid_x - name_half_w, H - 240, mid_x + name_half_w, H - 240)
+
+    # ── Body text ───────────────────────────────────────────────
+    p.setFillColor(HexColor('#333333'))
+    p.setFont('Times-Roman', 13)
+    p.drawCentredString(mid_x, H - 280, f'For outstanding participation and contribution in')
+
+    p.setFillColor(HexColor('#1a1a2e'))
+    p.setFont('Times-Bold', 20)
+    p.drawCentredString(mid_x, H - 310, f'"{event_name}"')
+
+    # ── Issue date ──────────────────────────────────────────────
+    date_str = timezone.now().strftime('%B %d, %Y')
+    p.setFillColor(HexColor('#555555'))
+    p.setFont('Times-Roman', 12)
+    p.drawCentredString(mid_x, H - 360, f'Issued on {date_str}')
+
+    # ── Bottom decorative line ──────────────────────────────────
+    p.setStrokeColor(HexColor('#DAA520'))
+    p.setLineWidth(1)
+    p.line(mid_x - 180, 120, mid_x + 180, 120)
+    p.saveState()
+    p.translate(mid_x, 120)
+    p.rotate(45)
+    p.rect(-4, -4, 8, 8, stroke=0, fill=1)
+    p.restoreState()
+
+    # ── Signature lines ─────────────────────────────────────────
+    p.setStrokeColor(HexColor('#888888'))
+    p.setLineWidth(0.7)
+    # Left signature
+    p.line(mid_x - 230, 80, mid_x - 80, 80)
+    p.setFillColor(HexColor('#555555'))
+    p.setFont('Times-Roman', 10)
+    p.drawCentredString(mid_x - 155, 65, 'Event Organizer')
+    # Right signature
+    p.line(mid_x + 80, 80, mid_x + 230, 80)
+    p.drawCentredString(mid_x + 155, 65, 'Date')
+
+    # ── Branding ────────────────────────────────────────────────
+    p.setFillColor(HexColor('#AAAAAA'))
+    p.setFont('Helvetica', 8)
+    p.drawCentredString(mid_x, 38, 'Powered by Planora — All-in-One Event Management Platform')
+
+    p.showPage()
+    p.save()
+    buffer.seek(0)
     return buffer.getvalue()
 
 
@@ -95,16 +192,8 @@ def _save_certificate_file(content: bytes, path: str) -> tuple[str, str]:
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def certificate_preview(request):
-    buffer = BytesIO()
-    p = canvas.Canvas(buffer)
-    p.setFont('Helvetica-Bold', 24)
-    p.drawString(100, 750, 'Certificate of Participation')
-    p.setFont('Helvetica', 14)
-    p.drawString(100, 700, 'This certifies that __________ attended Planora Event')
-    p.showPage()
-    p.save()
-    buffer.seek(0)
-    resp = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    pdf_bytes = _render_certificate_pdf('Your Name Here', 'Sample Event')
+    resp = HttpResponse(pdf_bytes, content_type='application/pdf')
     resp['Cache-Control'] = 'no-store'
     return resp
 

@@ -9,6 +9,7 @@ from apps.chats.models import Message
 from apps.tasks_app.models import Task
 from apps.events.models import Event
 from apps.automation.models import AutomationLog
+from apps.notifications.utils import notify_event_owner
 
 
 def _get_event(event_id: Optional[int]) -> Optional[Event]:
@@ -65,7 +66,7 @@ def notify_owner(event_id: Optional[int], subject: str, body: str) -> None:
     event = _get_event(event_id)
     if not event:
         return
-    # Stub: align with existing email_invites behavior (no actual send)
+    notify_event_owner(event, subject, body, type='automation')
     AutomationLog.objects.create(trigger='rule_action:notify_owner', payload={'event': event_id, 'subject': subject, 'body': body, 'owner': event.owner_id})
 
 

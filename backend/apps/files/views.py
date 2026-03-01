@@ -1,3 +1,5 @@
+import logging
+
 from rest_framework import viewsets, permissions
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
@@ -6,6 +8,8 @@ from django.http import FileResponse, Http404
 from django.db.models import Q
 from .models import FileAsset
 from .serializers import FileAssetSerializer
+
+logger = logging.getLogger(__name__)
 
 
 class FileAssetViewSet(viewsets.ModelViewSet):
@@ -19,7 +23,7 @@ class FileAssetViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         u = self.request.user
-        qs = FileAsset.objects.filter(
+        qs = FileAsset.objects.select_related('room__event', 'uploaded_by').filter(
             Q(room__event__owner=u) | Q(room__memberships__user=u)
         ).distinct()
         room_id = self.request.query_params.get('room')
@@ -59,4 +63,5 @@ class FileAssetViewSet(viewsets.ModelViewSet):
             response["Content-Disposition"] = f'attachment; filename="{filename}"'
             return response
         except Exception:
+            logger.exception("File download failed asset=%s", pk)
             raise Http404()

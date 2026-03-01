@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import Navbar from '../components/Navbar'
 import ActivityFeed from '../components/ActivityFeed'
+import useAuthStore from '../stores/authStore'
 
 const STATUS_OPTIONS = ['DRAFT', 'PLANNING', 'LIVE', 'COMPLETED', 'ARCHIVED']
 const RISK_COLORS = {
@@ -15,7 +16,8 @@ export default function Dashboard(){
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [me, setMe] = useState(null)
+  const me = useAuthStore(s => s.user)
+  const storeLogout = useAuthStore(s => s.logout)
   const [manageOpen, setManageOpen] = useState(null) // event id
   const [userQuery, setUserQuery] = useState('')
   const [userResults, setUserResults] = useState([])
@@ -41,11 +43,7 @@ export default function Dashboard(){
 
   useEffect(()=>{(async()=>{
     try{
-      const [meRes, evRes] = await Promise.all([
-        api.get('/users/me/', { auth: true }),
-        api.get('/events/', { auth: true })
-      ])
-      setMe(meRes.data || null)
+      const evRes = await api.get('/events/', { auth: true })
       const data = evRes.data
       const items = Array.isArray(data) ? data : (data?.results ?? [])
       setEvents(items)
@@ -69,7 +67,7 @@ export default function Dashboard(){
   },[])
 
   function logout(){
-    localStorage.clear()
+    storeLogout()
     nav('/login')
   }
 
@@ -195,6 +193,9 @@ export default function Dashboard(){
               )}
             </div>
             <div className="opacity-70 text-sm">{e.date} {e.time} • {e.mode}</div>
+            {e.description && (
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300 line-clamp-2">{e.description}</p>
+            )}
             <div className="mt-1 flex items-center gap-2 text-sm">
               <span className="px-2 py-0.5 rounded-full bg-neutral-200 text-neutral-800 dark:bg-slate-800 dark:text-slate-100 text-xs">{e.status || 'DRAFT'}</span>
               {me && e.owner_id===me.id && (

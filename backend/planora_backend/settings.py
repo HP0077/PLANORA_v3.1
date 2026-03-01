@@ -2,14 +2,21 @@ import os
 from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load .env from the backend folder (BASE_DIR/.env)
 load_dotenv(BASE_DIR / '.env')
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-secret-key-change')
-DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
+_secret = os.environ.get('DJANGO_SECRET_KEY', '')
+if not _secret:
+    raise ImproperlyConfigured(
+        'DJANGO_SECRET_KEY environment variable is required. '
+        'Generate one with: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"'
+    )
+SECRET_KEY = _secret
+DEBUG = os.environ.get('DJANGO_DEBUG', '0') == '1'
 # Trim and drop empties
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
 
@@ -39,6 +46,7 @@ INSTALLED_APPS = [
     'apps.automation_rules',
     'apps.timeline',
     'apps.ai_assistant',
+    'apps.notifications',
 ]
 
 MIDDLEWARE = [
@@ -120,6 +128,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'EXCEPTION_HANDLER': 'planora_backend.exceptions.global_exception_handler',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': int(os.environ.get('API_PAGE_SIZE', '20')),
     'DEFAULT_THROTTLE_CLASSES': (
@@ -209,6 +218,7 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '0'))
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = bool(int(os.environ.get('SECURE_HSTS_INCLUDE_SUBDOMAINS', '0')))
-    SECURE_HSTS_PRELOAD = bool(int(os.environ.get('SECURE_HSTS_PRELOAD', '0')))
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', '1') == '1'
+    SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True

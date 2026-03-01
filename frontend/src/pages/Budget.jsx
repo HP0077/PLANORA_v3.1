@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import api from '../services/api'
 import Navbar from '../components/Navbar'
+import useAuthStore from '../stores/authStore'
 
 export default function Budget(){
   const [events, setEvents] = useState([])
@@ -12,7 +13,7 @@ export default function Budget(){
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [errorTimeoutId, setErrorTimeoutId] = useState(null)
-  const [me, setMe] = useState(null)
+  const me = useAuthStore(s => s.user)
   const [deletingId, setDeletingId] = useState(null)
 
   const selectedEvent = events.find(ev=> String(ev.id) === String(eventId))
@@ -47,13 +48,9 @@ export default function Budget(){
   }, [eventId])
 
   async function loadInitial(){
-    const [ev, meRes] = await Promise.all([
-      api.get('/events/', { auth: true }),
-      api.get('/users/me/', { auth: true }),
-    ])
+    const ev = await api.get('/events/', { auth: true })
     const evList = ev.data?.results ?? ev.data ?? []
     setEvents(evList)
-    setMe(meRes.data || null)
     const defaultEvent = evList[0]?.id ? String(evList[0].id) : ''
     if(!eventId && defaultEvent){
       setEventId(defaultEvent)
@@ -140,7 +137,7 @@ export default function Budget(){
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Budget</h2>
             {error && <div className="mt-2 text-sm text-rose-600 dark:text-rose-400">{error}</div>}
           </div>
-          <div className="flex gap-2 items-start">
+          <div className="flex gap-2 items-end">
             <div className="flex flex-col gap-1 w-full max-w-sm">
               <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Event</label>
               <select className="input" value={eventId} onChange={e=>setEventId(e.target.value)}>
@@ -148,6 +145,31 @@ export default function Budget(){
                 {events.map(ev=> <option key={ev.id} value={ev.id}>{ev.name}</option>)}
               </select>
             </div>
+            {eventId && (
+              <button
+                className="btn-outline px-4 py-2 text-sm whitespace-nowrap"
+                onClick={async ()=>{
+                  try{
+                    const res = await api.get(`/budget/export_csv/?event=${eventId}`, { auth: true })
+                    const csv = typeof res.data === 'string' ? res.data : JSON.stringify(res.data)
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = `budget_${selectedEvent?.name || eventId}.csv`
+                    document.body.appendChild(a)
+                    a.click()
+                    a.remove()
+                    URL.revokeObjectURL(url)
+                    setInfo('CSV downloaded')
+                  }catch(e){
+                    setError('Failed to export CSV')
+                  }
+                }}
+              >
+                ⬇ Export CSV
+              </button>
+            )}
           </div>
           {loadingSummary && <div className="text-sm text-slate-600 dark:text-slate-300">Loading summary...</div>}
           {summary && (

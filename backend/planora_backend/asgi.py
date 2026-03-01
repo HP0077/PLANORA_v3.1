@@ -18,6 +18,11 @@ try:
     patterns += poster_ws
 except Exception:
     pass
+try:
+    from apps.tasks_app.routing import websocket_urlpatterns as tasks_ws
+    patterns += tasks_ws
+except Exception:
+    pass
 
 application = ProtocolTypeRouter({
     'http': django_asgi_app,

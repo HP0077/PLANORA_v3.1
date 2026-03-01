@@ -11,7 +11,7 @@ instance.interceptors.request.use((config)=>{
   // Attach auth header only when requested
   if(config._auth){
     config.headers = config.headers || {}
-    const token = sessionStorage.getItem('access')
+    const token = localStorage.getItem('access') || sessionStorage.getItem('access')
     if(token) config.headers.Authorization = `Bearer ${token}`
   }
   return config
@@ -25,12 +25,13 @@ function notifyQueue(error, token){
 }
 async function refresh(){
   if(!refreshing){
-    const refreshToken = sessionStorage.getItem('refresh')
+    const refreshToken = localStorage.getItem('refresh') || sessionStorage.getItem('refresh')
     if(!refreshToken){
       throw new Error('No refresh')
     }
     refreshing = instance.post('/users/token/refresh/', { refresh: refreshToken })
       .then(({data})=>{
+        localStorage.setItem('access', data.access)
         sessionStorage.setItem('access', data.access)
         notifyQueue(null, data.access)
         return data.access
@@ -59,6 +60,7 @@ instance.interceptors.response.use(r=>r, async (error)=>{
       original.headers.Authorization = `Bearer ${token}`
       return instance(original)
     }catch(e){
+      localStorage.clear()
       sessionStorage.clear()
       window.location.href = '/login'
     }

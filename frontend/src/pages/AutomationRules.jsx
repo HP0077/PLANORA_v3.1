@@ -84,8 +84,10 @@ export default function AutomationRules(){
     try{
       const { data } = await api.get('/automation/rules/', { auth: true })
       setRules(data?.results ?? data ?? [])
+      setError('')
     }catch(err){
-      setError('Failed to load rules')
+      const msg = err?.response?.data?.error?.message || err?.response?.data?.detail || err?.message || 'Unknown error'
+      setError(`Failed to load rules: ${msg}`)
     }finally{ setLoading(false) }
   }
 

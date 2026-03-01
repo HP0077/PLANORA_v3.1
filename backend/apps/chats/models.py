@@ -8,6 +8,9 @@ class ChatRoom(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_rooms', null=True, blank=True)
     members = models.ManyToManyField(User, through='ChatMembership', related_name='chat_memberships')
 
+    class Meta:
+        ordering = ['-id']
+
     def __str__(self):
         return f"{self.name} ({self.event.name})"
 
@@ -21,6 +24,10 @@ class Message(models.Model):
 
     class Meta:
         ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['room', '-created_at']),
+            models.Index(fields=['sender', '-created_at']),
+        ]
 
 
 class MessageRead(models.Model):

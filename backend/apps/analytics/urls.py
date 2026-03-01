@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import summary
+from .views import AnalyticsSummaryView
 
 urlpatterns = [
-    path('summary/', summary),
+    path('summary/', AnalyticsSummaryView.as_view(), name='analytics-summary'),
 ]

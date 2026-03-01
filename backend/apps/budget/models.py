@@ -31,3 +31,9 @@ class BudgetItem(models.Model):
     estimated = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     actual = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['event', 'type']),
+            models.Index(fields=['event', '-created_at']),
+        ]

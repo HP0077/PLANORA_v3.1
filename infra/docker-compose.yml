@@ -1,7 +1,22 @@
 version: '3.9'
+
+x-backend-common: &backend-common
+  build:
+    context: ..
+    dockerfile: Dockerfile
+    target: backend
+  env_file:
+    - ../backend/.env
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_started
+
 services:
+  # ── Database ────────────────────────────────────────────────────────────────
   db:
-    image: postgres:16
+    image: postgres:16-alpine
     environment:
       POSTGRES_DB: planora
       POSTGRES_USER: postgres
@@ -10,20 +25,72 @@ services:
       - '5432:5432'
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ───────────────────────────────────────────────────────────────────
   redis:
-    image: redis:7
+    image: redis:7-alpine
     ports:
       - '6379:6379'
+
+  # ── Django ASGI backend (daphne) ────────────────────────────────────────────
   backend:
-    build:
-      context: ../backend
-      dockerfile: Dockerfile.backend
-    env_file:
-      - ../backend/.env.example
-    depends_on:
-      - db
-      - redis
+    <<: *backend-common
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             daphne -b 0.0.0.0 -p 8000 planora_backend.asgi:application"
     ports:
       - '8000:8000'
+    volumes:
+      - media_data:/app/media
+
+  # ── Celery worker ──────────────────────────────────────────────────────────
+  celery-worker:
+    <<: *backend-common
+    command: celery -A planora_backend worker -l info --concurrency=2
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  # ── Celery beat scheduler ──────────────────────────────────────────────────
+  celery-beat:
+    <<: *backend-common
+    command: celery -A planora_backend beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  # ── Nginx reverse-proxy + frontend SPA ─────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - frontend_dist:/usr/share/nginx/html:ro
+      - media_data:/app/media:ro
+    depends_on:
+      - backend
+      - frontend-build
+
+  # ── One-shot frontend build container ──────────────────────────────────────
+  frontend-build:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: frontend-build
+    volumes:
+      - frontend_dist:/app/dist
+
 volumes:
   db_data:
+  media_data:
+  frontend_dist:

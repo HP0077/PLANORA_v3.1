@@ -19,6 +19,7 @@ urlpatterns = [
     path('api/automation/', include('apps.automation_rules.urls')),
     path('api/timeline/', include('apps.timeline.urls')),
     path('api/ai/', include('apps.ai_assistant.urls')),
+    path('api/notifications/', include('apps.notifications.urls')),
 ]
 
 if settings.DEBUG:

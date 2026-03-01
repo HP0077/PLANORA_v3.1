@@ -20,6 +20,7 @@ export default function AiAssistant(){
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [conversationId, setConversationId] = useState(null)
 
   useEffect(()=>{
     (async()=>{
@@ -34,6 +35,12 @@ export default function AiAssistant(){
     })()
   }, [])
 
+  // Reset conversation when event changes
+  useEffect(()=>{
+    setMessages([])
+    setConversationId(null)
+  }, [eventId])
+
   const canSend = useMemo(()=> question.trim().length>0 && eventId && !loading, [question, eventId, loading])
 
   async function sendQuestion(){
@@ -45,8 +52,11 @@ export default function AiAssistant(){
     setLoading(true)
     setError('')
     try{
-      const { data } = await api.post('/ai/ask/', { event_id: Number(eventId), question: trimmed }, { auth: true })
+      const payload = { event_id: Number(eventId), question: trimmed }
+      if(conversationId) payload.conversation_id = conversationId
+      const { data } = await api.post('/ai/ask/', payload, { auth: true })
       const answer = data?.answer || 'No answer returned.'
+      if(data?.conversation_id) setConversationId(data.conversation_id)
       setMessages(msgs => [...msgs, { role:'assistant', text: answer }])
     }catch(err){
       // Surface any available error detail to the user; fall back to a readable message.

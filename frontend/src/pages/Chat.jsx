@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Navbar from '../components/Navbar'
 import { connectChat } from '../services/websocket'
 import api from '../services/api'
+import useAuthStore from '../stores/authStore'
 
 export default function Chat(){
   const [rooms, setRooms] = useState([])
@@ -12,7 +13,7 @@ export default function Chat(){
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [connected, setConnected] = useState(false)
-  const [me, setMe] = useState(null)
+  const me = useAuthStore(s => s.user)
   const [groupFilter, setGroupFilter] = useState('')
   const [events, setEvents] = useState([])
   const [roomForm, setRoomForm] = useState({ name:'', event:'' })
@@ -84,8 +85,7 @@ export default function Chat(){
     let cancelled = false
     async function init(){
       try{
-        const [meRes, roomsRes, eventsRes] = await Promise.all([
-          api.get('/users/me/', { auth: true }),
+        const [roomsRes, eventsRes] = await Promise.all([
           api.get('/chats/rooms/', { auth: true }),
           api.get('/events/', { auth: true }),
         ])
@@ -95,9 +95,8 @@ export default function Chat(){
         setRooms(roomsArr)
         const evData = eventsRes.data?.results ?? eventsRes.data ?? []
         setEvents(Array.isArray(evData) ? evData : [])
-        setMe(meRes.data || null)
         if(!roomsArr.length) return
-        const lastId = meRes.data?.profile?.last_viewed_group_id
+        const lastId = me?.profile?.last_viewed_group_id
         const found = roomsArr.find(r=>String(r.id) === String(lastId))
         setActiveRoom(found || roomsArr[0])
       }catch(e){
@@ -169,8 +168,7 @@ export default function Chat(){
 
     // hydrate draft & scroll for this room if available
     try{
-      const storedMe = JSON.parse(sessionStorage.getItem('me') || 'null')
-      const draftMap = storedMe?.profile?.drafts?.chat || {}
+      const draftMap = me?.profile?.drafts?.chat || {}
       if(draftMap && draftMap[String(activeRoom.id)]){
         setInput(draftMap[String(activeRoom.id)])
       }else{
@@ -341,12 +339,10 @@ export default function Chat(){
     clearTimeout(draftTimerRef.current)
     draftTimerRef.current = setTimeout(async ()=>{
       try{
-        const prev = JSON.parse(sessionStorage.getItem('me') || 'null') || {}
-        const profile = prev.profile || {}
+        const currentUser = useAuthStore.getState().user || {}
+        const profile = currentUser.profile || {}
         const drafts = { ...(profile.drafts||{}), chat: { ...(profile.drafts?.chat||{}), [String(activeRoom.id)]: e.target.value } }
         await api.put('/users/me/', { profile: { last_viewed_group_id: activeRoom.id, drafts } }, { auth: true })
-        const nextMe = { ...prev, profile: { ...profile, last_viewed_group_id: activeRoom.id, drafts } }
-        sessionStorage.setItem('me', JSON.stringify(nextMe))
       }catch{ /* ignore */ }
     }, 400)
   }

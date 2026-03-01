@@ -1,4 +1,9 @@
-const WS_BASE = import.meta.env.VITE_WS_BASE || 'ws://localhost:8000'
+const WS_BASE = (()=>{
+  const env = import.meta.env.VITE_WS_BASE
+  if(env) return env.replace(/\/$/, '')
+  if(typeof window !== 'undefined'){ return window.location.origin.replace(/^http/, 'ws') }
+  return 'ws://localhost:8000'
+})()
 
 // Simple Channels WebSocket helper
 // Usage:
@@ -10,7 +15,7 @@ const WS_BASE = import.meta.env.VITE_WS_BASE || 'ws://localhost:8000'
 //   ws.send({ content: 'hello' })
 //   ws.close()
 export function connectChat(roomId, { onMessage, onOpen, onClose } = {}){
-  const token = sessionStorage.getItem('access')
+  const token = localStorage.getItem('access') || sessionStorage.getItem('access')
   const baseUrl = `${WS_BASE}/ws/chats/${roomId}/` + (token ? `?token=${encodeURIComponent(token)}` : '')
 
   let ws = null

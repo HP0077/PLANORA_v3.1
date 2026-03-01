@@ -26,9 +26,13 @@ class BudgetItemViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         u = self.request.user
-        qs = BudgetItem.objects.filter(
-            Q(event__owner=u) | Q(room__memberships__user=u)
-        ).distinct().order_by('-created_at')
+        qs = (
+            BudgetItem.objects
+            .select_related('event')
+            .filter(Q(event__owner=u) | Q(room__memberships__user=u))
+            .distinct()
+            .order_by('-created_at')
+        )
 
         params = self.request.query_params
         event_id = params.get('event') or params.get('event_id')
