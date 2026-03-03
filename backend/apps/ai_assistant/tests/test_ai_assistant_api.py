@@ -1,3 +1,4 @@
+import os
 from unittest import mock
 
 from django.contrib.auth.models import User
@@ -51,6 +52,7 @@ class AiAssistantApiTests(TestCase):
         self.assertEqual(resp.status_code, 200)
 
     @override_settings(AI_PROVIDER='groq')
+    @mock.patch.dict(os.environ, {'GROQ_API_KEY': ''})
     @mock.patch('apps.ai_assistant.views.ollama_client.generate', return_value=('fallback-answer', 8))
     def test_fallback_when_groq_missing_key(self, mock_ollama):
         # When GROQ_API_KEY is absent, _select_providers() skips groq entirely
