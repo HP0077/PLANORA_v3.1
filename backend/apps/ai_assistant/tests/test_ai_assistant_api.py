@@ -53,8 +53,8 @@ class AiAssistantApiTests(TestCase):
     @override_settings(AI_PROVIDER='groq')
     @mock.patch('apps.ai_assistant.views.ollama_client.generate', return_value=('fallback-answer', 8))
     def test_fallback_when_groq_missing_key(self, mock_ollama):
-        # When AI_PROVIDER='groq' but GROQ_API_KEY is absent, _select_providers()
-        # skips groq and uses ollama directly — no groq call should be made.
+        # When GROQ_API_KEY is absent, _select_providers() skips groq entirely
+        # and routes directly to ollama — groq is never attempted.
         self._auth(self.owner)
         resp = self.client.post('/api/ai/ask/', {'event_id': self.event.id, 'question': 'Check risk'}, format='json')
         self.assertEqual(resp.status_code, 200)
