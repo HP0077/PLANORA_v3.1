@@ -105,6 +105,9 @@ Context Processing → LLM (Groq / Ollama) → Response → UI
 ### 🎨 Poster Generation
 ![Poster](screenshots/poster.png)
 
+### 📊 Overall Analytics of the Events
+![Poster](screenshots/dashboard.png)
+
 ---
 
 ### Prerequisites
