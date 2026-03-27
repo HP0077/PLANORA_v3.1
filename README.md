@@ -1,121 +1,116 @@
-# Planora - All-in-One Event Management Platform
+# 🤖 Planora — AI-Powered Event Orchestration Platform
 
-Full-stack event management platform: Django REST + Channels backend, React + Tailwind frontend. Features include user auth, events, tasks, real-time chat, poster/certificate editor, budgeting, analytics, AI assistant, and automation rules.
-
-> **This repo ships with a pre-populated SQLite database, media files, and environment configs so you can clone and run immediately -- no setup beyond installing dependencies.**
+An intelligent event management platform that integrates task tracking, real-time collaboration, and AI-powered decision support using Large Language Models (LLMs).
 
 ---
 
-## Quick Start (Clone & Run -- Windows)
+## 🚀 Overview
 
-> **Prerequisites:** Python 3.10+, Node.js 18+, Git
+Planora is a full-stack application designed to help event managers efficiently plan, manage, and execute events from a unified platform.
 
-### Step 0 -- Clone
-
-```
-cd %USERPROFILE%\Desktop
-git clone https://github.com/HP0077/PLANORA_v3.git planora_v3.0
-```
-
-### Step 1 -- Backend (open CMD window 1)
-
-```
-cd %USERPROFILE%\Desktop\planora_v3.0\backend
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-daphne -b 127.0.0.1 -p 8001 planora_backend.asgi:application
-```
-
-> Keep this window open. Backend runs at **http://127.0.0.1:8001**
-> The `.env` and `db.sqlite3` are already in the repo -- no extra config needed.
-
-### Step 2 -- Frontend (open CMD window 2)
-
-```
-cd %USERPROFILE%\Desktop\planora_v3.0\frontend
-npm install
-npm run dev -- --host --port 5173
-```
-
-> Keep this window open. Frontend runs at **http://localhost:5173**
-> The `frontend/.env` already points to `http://127.0.0.1:8001`.
-
-### Step 3 -- Open the App
-
-Go to **http://localhost:5173** in your browser. The database already has demo users and events.
+It combines real-time system capabilities with an AI-powered chatbot that delivers context-aware insights, recommendations, and automation using live event data.
 
 ---
 
-### Quick Restart (if you closed everything)
+## ✨ Key Features
 
-**CMD 1 -- Backend:**
-```
-cd %USERPROFILE%\Desktop\planora_v3.0\backend
-.venv\Scripts\activate
-daphne -b 127.0.0.1 -p 8001 planora_backend.asgi:application
-```
-
-**CMD 2 -- Frontend:**
-```
-cd %USERPROFILE%\Desktop\planora_v3.0\frontend
-npm run dev -- --host --port 5173
-```
+- 🤖 AI Chatbot for event-related queries and decision support  
+- 📋 Task Management & Scheduling  
+- 💬 Real-time Communication using WebSockets  
+- 📊 Event Analytics & Insights  
+- 🧠 AI-powered capabilities:
+  - Task suggestions  
+  - Event summaries  
+  - Risk mitigation guidance  
+  - Automated communication drafts  
+- 🔄 Dual LLM Integration (Groq + Ollama fallback)
 
 ---
 
-## What's Included
+## 🏗️ System Architecture / Workflow
 
-| Component | Tech | Port |
-|-----------|------|------|
-| Backend (ASGI) | Django 5 + Channels + Daphne | 8001 |
-| Frontend | React + Vite + Tailwind | 5173 |
-| Database | SQLite (pre-populated, in repo) | -- |
-| AI Assistant | Groq cloud (API key in `.env`) + Ollama fallback | -- |
-
-### AI Assistant
-
-The Groq API key is already configured in `backend/.env`. The AI Assistant works out of the box. If you also want local Ollama as fallback:
-
-```
-ollama serve          (CMD window 3)
-ollama pull llama3    (separate terminal)
-```
+User → React Frontend → Django Backend (ASGI + Channels) →  
+Context Processing → LLM (Groq / Ollama) → Response → UI
 
 ---
 
-## Developer Docs
+## 🛠️ Tech Stack
 
-- [API Spec](docs/API_SPEC.md)
-- [DB Schema](docs/DB_SCHEMA_SQLITE.sql)
-- [Implementation Plan](docs/IMPLEMENTATION_PLAN.md)
-- [UI Wireframes & Components](docs/UI_WIREFRAMES_AND_COMPONENTS.md)
-- [Example Flows](docs/EXAMPLE_FLOWS.md)
+### 🔹 Backend
+- Django 5, Django REST Framework  
+- Channels (ASGI) + Daphne  
 
-### Key API Endpoints (prefix `/api`)
+### 🔹 Frontend
+- React 18, Vite, Tailwind CSS  
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/users/register/` | Register |
-| POST | `/users/token/` | Login (username or email + password) |
-| POST | `/users/token/refresh/` | Refresh JWT |
-| GET | `/users/me/` | Current user profile |
-| GET/POST | `/events/` | List / create events |
-| GET | `/events/<id>/timeline/` | Activity feed |
-| POST | `/ai/ask/` | AI Assistant query |
-| WS | `ws://host/ws/chats/<room_id>/?token=<JWT>` | Real-time chat |
+### 🔹 Database
+- SQLite (local development)  
+- PostgreSQL (production)  
 
-### Backend Environment Variables (`backend/.env`)
+### 🔹 Real-Time
+- WebSockets (Django Channels)  
 
-Already configured. Key settings:
-- `USE_SQLITE=1` -- uses SQLite (default for local dev)
-- `GROQ_API_KEY` -- Groq cloud LLM key (pre-configured)
-- `AI_PROVIDER=groq` -- use Groq as primary AI provider
-- `FRONTEND_ORIGIN=http://localhost:5173` -- CORS origin
+### 🔹 AI / LLM
+- Groq API (cloud LLM)  
+- Ollama (local fallback, LLaMA3)  
 
-## Troubleshooting
+---
 
-- **WebSocket 404:** Make sure you're running Daphne (not `runserver`). `runserver` doesn't support WebSockets.
-- **Port conflict:** If port 8001 is busy, change it in the `daphne` command and update `frontend/.env` accordingly.
-- **Missing dependencies:** Run `pip install -r requirements.txt` and `npm install` again.
-- **Database reset:** Delete `backend/db.sqlite3`, then run `python manage.py migrate` to start fresh (you'll lose demo data).
+## 🤖 AI System Design
+
+- Event-aware chatbot using live task and event data  
+- Context-aware prompt construction for relevant responses  
+- Dual LLM routing for reliability and fault tolerance  
+- Supports multi-turn conversations with context retention  
+
+---
+
+## 📸 Screenshots
+
+### 🏠 Landing Page (Home 1)
+![Home 1](screenshots/index1.png)
+
+### 🏠 Landing Page (Home 2)
+![Home 2](screenshots/index2.png)
+
+### 📝 Register Page
+![Register](screenshots/register.png)
+
+### 🔐 Login Page
+![Login](screenshots/login.png)
+
+### 📊 Main Dashboard
+![Main Dashboard](screenshots/main_dashboard.png)
+
+---
+
+### 🤖 Chat Interface
+![Chat](screenshots/chat.png)
+
+### 🧠 AI Assistant Features
+![AI Assistant](screenshots/AI_assistant.png)
+
+### 🛠️ AI Tools Panel
+![AI Tools](screenshots/AI_tools.png)
+
+### 📋 Task Management
+![Tasks](screenshots/task.png)
+
+### 💰 Budget Management
+![Budget](screenshots/budget.png)
+
+### 🏆 Certificate Generation
+![Certificate](screenshots/certificate.png)
+
+### 🎨 Poster Generation
+![Poster](screenshots/poster.png)
+
+---
+
+### Prerequisites
+- Python 3.10+
+- Node.js 18+
+- Git
+- (Optional) Docker + Docker Compose
+
+---
