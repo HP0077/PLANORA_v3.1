@@ -1,0 +1,66 @@
+{
+  "1_readers": {
+    "concurrency": 1,
+    "total_requests": 20,
+    "wall_time_ms": 89.34,
+    "throughput_rps": 223.86,
+    "latency": {
+      "count": 20,
+      "mean_ms": 4.44,
+      "median_ms": 1.74,
+      "std_ms": 10.02,
+      "ci_95_ms": 4.39,
+      "p95_ms": 46.8,
+      "min_ms": 1.52,
+      "max_ms": 46.8
+    }
+  },
+  "5_readers": {
+    "concurrency": 5,
+    "total_requests": 100,
+    "wall_time_ms": 188.77,
+    "throughput_rps": 529.75,
+    "latency": {
+      "count": 100,
+      "mean_ms": 8.71,
+      "median_ms": 5.41,
+      "std_ms": 12.98,
+      "ci_95_ms": 2.54,
+      "p95_ms": 53.79,
+      "min_ms": 1.53,
+      "max_ms": 80.04
+    }
+  },
+  "10_readers": {
+    "concurrency": 10,
+    "total_requests": 200,
+    "wall_time_ms": 534.21,
+    "throughput_rps": 374.38,
+    "latency": {
+      "count": 200,
+      "mean_ms": 17.22,
+      "median_ms": 9.89,
+      "std_ms": 29.78,
+      "ci_95_ms": 4.13,
+      "p95_ms": 68.62,
+      "min_ms": 2.07,
+      "max_ms": 216.91
+    }
+  },
+  "20_readers": {
+    "concurrency": 20,
+    "total_requests": 400,
+    "wall_time_ms": 762.09,
+    "throughput_rps": 524.87,
+    "latency": {
+      "count": 400,
+      "mean_ms": 32.8,
+      "median_ms": 24.05,
+      "std_ms": 36.98,
+      "ci_95_ms": 3.62,
+      "p95_ms": 75.36,
+      "min_ms": 1.47,
+      "max_ms": 274.82
+    }
+  }
+}

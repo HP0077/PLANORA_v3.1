@@ -1,0 +1,34 @@
+{
+  "unified_schema_context_assembly": {
+    "count": 30,
+    "mean_ms": 4.08,
+    "median_ms": 3.79,
+    "std_ms": 0.64,
+    "ci_95_ms": 0.23,
+    "p95_ms": 5.76,
+    "min_ms": 3.61,
+    "max_ms": 6.06
+  },
+  "fragmented_sequential_api_retrieval": {
+    "count": 30,
+    "mean_ms": 16.92,
+    "median_ms": 15.91,
+    "std_ms": 3.28,
+    "ci_95_ms": 1.17,
+    "p95_ms": 23.1,
+    "min_ms": 14.37,
+    "max_ms": 31.39
+  },
+  "fragmented_concurrent_api_retrieval": {
+    "count": 30,
+    "mean_ms": 10.38,
+    "median_ms": 6.57,
+    "std_ms": 5.88,
+    "ci_95_ms": 2.1,
+    "p95_ms": 20.3,
+    "min_ms": 4.72,
+    "max_ms": 20.88
+  },
+  "latency_reduction_vs_sequential_pct": 75.88,
+  "latency_reduction_vs_concurrent_pct": 60.7
+}

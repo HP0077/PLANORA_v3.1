@@ -1,0 +1,102 @@
+{
+  "1_threads": {
+    "concurrency": 1,
+    "total_requests": 20,
+    "successful": 20,
+    "lock_errors": 0,
+    "other_errors": 0,
+    "error_rate_pct": 0.0,
+    "wall_time_ms": 572.37,
+    "throughput_rps": 34.94,
+    "latency": {
+      "count": 20,
+      "mean_ms": 28.59,
+      "median_ms": 11.28,
+      "std_ms": 77.72,
+      "ci_95_ms": 34.06,
+      "p95_ms": 358.76,
+      "min_ms": 9.31,
+      "max_ms": 358.76
+    }
+  },
+  "2_threads": {
+    "concurrency": 2,
+    "total_requests": 40,
+    "successful": 40,
+    "lock_errors": 0,
+    "other_errors": 0,
+    "error_rate_pct": 0.0,
+    "wall_time_ms": 362.5,
+    "throughput_rps": 110.34,
+    "latency": {
+      "count": 40,
+      "mean_ms": 18.04,
+      "median_ms": 15.7,
+      "std_ms": 9.89,
+      "ci_95_ms": 3.06,
+      "p95_ms": 60.29,
+      "min_ms": 14.18,
+      "max_ms": 60.8
+    }
+  },
+  "5_threads": {
+    "concurrency": 5,
+    "total_requests": 100,
+    "successful": 100,
+    "lock_errors": 0,
+    "other_errors": 0,
+    "error_rate_pct": 0.0,
+    "wall_time_ms": 1093.77,
+    "throughput_rps": 91.43,
+    "latency": {
+      "count": 100,
+      "mean_ms": 54.05,
+      "median_ms": 44.76,
+      "std_ms": 25.86,
+      "ci_95_ms": 5.07,
+      "p95_ms": 119.47,
+      "min_ms": 12.16,
+      "max_ms": 136.02
+    }
+  },
+  "10_threads": {
+    "concurrency": 10,
+    "total_requests": 200,
+    "successful": 200,
+    "lock_errors": 0,
+    "other_errors": 0,
+    "error_rate_pct": 0.0,
+    "wall_time_ms": 1938.61,
+    "throughput_rps": 103.17,
+    "latency": {
+      "count": 200,
+      "mean_ms": 94.07,
+      "median_ms": 90.12,
+      "std_ms": 28.73,
+      "ci_95_ms": 3.98,
+      "p95_ms": 125.14,
+      "min_ms": 21.67,
+      "max_ms": 280.89
+    }
+  },
+  "20_threads": {
+    "concurrency": 20,
+    "total_requests": 400,
+    "successful": 400,
+    "lock_errors": 0,
+    "other_errors": 0,
+    "error_rate_pct": 0.0,
+    "wall_time_ms": 4715.06,
+    "throughput_rps": 84.83,
+    "latency": {
+      "count": 400,
+      "mean_ms": 229.08,
+      "median_ms": 206.4,
+      "std_ms": 75.62,
+      "ci_95_ms": 7.41,
+      "p95_ms": 436.49,
+      "min_ms": 43.23,
+      "max_ms": 497.3
+    }
+  }
+}

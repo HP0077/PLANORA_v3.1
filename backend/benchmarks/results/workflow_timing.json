@@ -1,0 +1,146 @@
+{
+  "iterations": 10,
+  "per_run": [
+    {
+      "event_creation_ms": 6.071600000723265,
+      "ai_description_ms": 1.3376999995671213,
+      "task_creation_10_ms": 40.32070000539534,
+      "budget_creation_5_ms": 23.20049999980256,
+      "intelligence_compute_ms": 5.410199999460019,
+      "automation_eval_ms": 1.437300001271069,
+      "total_ms": 77.77800000621937
+    },
+    {
+      "event_creation_ms": 5.317000002833083,
+      "ai_description_ms": 0.6621999928029254,
+      "task_creation_10_ms": 45.308100001420826,
+      "budget_creation_5_ms": 34.97219999553636,
+      "intelligence_compute_ms": 6.469699990702793,
+      "automation_eval_ms": 1.604300006874837,
+      "total_ms": 94.33349999017082
+    },
+    {
+      "event_creation_ms": 8.036200000788085,
+      "ai_description_ms": 0.7179999956861138,
+      "task_creation_10_ms": 44.20370000298135,
+      "budget_creation_5_ms": 27.396300007239915,
+      "intelligence_compute_ms": 5.661299990606494,
+      "automation_eval_ms": 1.5299999940907583,
+      "total_ms": 87.54549999139272
+    },
+    {
+      "event_creation_ms": 5.366999990656041,
+      "ai_description_ms": 0.6639000057475641,
+      "task_creation_10_ms": 36.32669999205973,
+      "budget_creation_5_ms": 25.006099996971898,
+      "intelligence_compute_ms": 4.206799989333376,
+      "automation_eval_ms": 1.3578000070992857,
+      "total_ms": 72.9282999818679
+    },
+    {
+      "event_creation_ms": 6.9121999986236915,
+      "ai_description_ms": 0.7000000041443855,
+      "task_creation_10_ms": 41.30050000094343,
+      "budget_creation_5_ms": 29.28189998783637,
+      "intelligence_compute_ms": 4.022299995995127,
+      "automation_eval_ms": 1.2892999948235229,
+      "total_ms": 83.50619998236652
+    },
+    {
+      "event_creation_ms": 6.8427999940468,
+      "ai_description_ms": 0.6983999919611961,
+      "task_creation_10_ms": 35.57069999806117,
+      "budget_creation_5_ms": 23.475699999835342,
+      "intelligence_compute_ms": 6.0548000037670135,
+      "automation_eval_ms": 1.3983999961055815,
+      "total_ms": 74.0407999837771
+    },
+    {
+      "event_creation_ms": 5.738199994084425,
+      "ai_description_ms": 0.6492999964393675,
+      "task_creation_10_ms": 35.224599996581674,
+      "budget_creation_5_ms": 25.761600001715124,
+      "intelligence_compute_ms": 4.123799997614697,
+      "automation_eval_ms": 1.2639000051422045,
+      "total_ms": 72.76139999157749
+    },
+    {
+      "event_creation_ms": 6.177999995998107,
+      "ai_description_ms": 0.683599995682016,
+      "task_creation_10_ms": 35.98829999100417,
+      "budget_creation_5_ms": 24.51679999649059,
+      "intelligence_compute_ms": 5.738399995607324,
+      "automation_eval_ms": 1.524999999674037,
+      "total_ms": 74.63009997445624
+    },
+    {
+      "event_creation_ms": 5.306000006385148,
+      "ai_description_ms": 0.6704999977955595,
+      "task_creation_10_ms": 37.42749999219086,
+      "budget_creation_5_ms": 24.716600004467182,
+      "intelligence_compute_ms": 4.529600002570078,
+      "automation_eval_ms": 1.4245999918784946,
+      "total_ms": 74.07479999528732
+    },
+    {
+      "event_creation_ms": 7.653699998627417,
+      "ai_description_ms": 0.7674000080442056,
+      "task_creation_10_ms": 38.92740000446793,
+      "budget_creation_5_ms": 31.29419998731464,
+      "intelligence_compute_ms": 4.050300005474128,
+      "automation_eval_ms": 1.3261999993119389,
+      "total_ms": 84.01920000324026
+    }
+  ],
+  "aggregate": {
+    "event_creation_ms": {
+      "mean": 6.34,
+      "median": 6.12,
+      "std_dev": 0.98,
+      "min": 5.31,
+      "max": 8.04
+    },
+    "ai_description_ms": {
+      "mean": 0.76,
+      "median": 0.69,
+      "std_dev": 0.21,
+      "min": 0.65,
+      "max": 1.34
+    },
+    "task_creation_10_ms": {
+      "mean": 39.06,
+      "median": 38.18,
+      "std_dev": 3.63,
+      "min": 35.22,
+      "max": 45.31
+    },
+    "budget_creation_5_ms": {
+      "mean": 26.96,
+      "median": 25.38,
+      "std_dev": 3.82,
+      "min": 23.2,
+      "max": 34.97
+    },
+    "intelligence_compute_ms": {
+      "mean": 5.03,
+      "median": 4.97,
+      "std_dev": 0.94,
+      "min": 4.02,
+      "max": 6.47
+    },
+    "automation_eval_ms": {
+      "mean": 1.42,
+      "median": 1.41,
+      "std_dev": 0.11,
+      "min": 1.26,
+      "max": 1.6
+    },
+    "total_ms": {
+      "mean": 79.56,
+      "median": 76.2,
+      "std_dev": 7.42,
+      "min": 72.76,
+      "max": 94.33
+    }
+  }
+}
