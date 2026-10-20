@@ -116,4 +116,22 @@ Context Processing → LLM (Groq / Ollama) → Response → UI
 - Git
 - (Optional) Docker + Docker Compose
 
+## Run locally
+
+### Backend
+cd backend
+python -m venv .venv
+.venv\Scripts\activate        # macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
+copy .env.example .env        # macOS/Linux: cp .env.example .env
+# add your GROQ_API_KEY in .env (optional; falls back to local Ollama)
+python manage.py migrate
+daphne -p 8000 planora_backend.asgi:application
+
+### Frontend
+cd frontend
+npm install
+copy .env.example .env
+npm run dev
+
 ---
